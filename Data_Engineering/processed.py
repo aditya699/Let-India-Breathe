@@ -39,8 +39,8 @@ blob_list = [blob.name for blob in container_client.list_blobs()]
 
 
 #Iterating through the list of blobs and applying the transformations and dumping the same in Processed Container
-for i in blob_list:
-    BLOBNAME=i
+for j in blob_list:
+    BLOBNAME=j
     #download from blob
     blob_service_client_instance = BlobServiceClient(account_url=STORAGEACCOUNTURL, credential=STORAGEACCOUNTKEY)
     blob_client_instance = blob_service_client_instance.get_blob_client(CONTAINERNAME, BLOBNAME, snapshot=None)
@@ -52,25 +52,35 @@ for i in blob_list:
 
     # Perform transformations using pandas
     df = pd.read_csv(content_io)  
-    df.drop(['BP (mmHg)'],axis=1,inplace=True)
-    df=df.dropna()
-    df.drop(['To Date'],axis=1,inplace=True)
-    df['From Date'] = pd.to_datetime(df['From Date'])
-    df['Month'] = df['From Date'].dt.month
-    df['filename']=BLOBNAME.split(".")[0]
-    df.drop(['From Date'],axis=1,inplace=True)
-    
-    
-    output = df.to_csv (encoding = "utf-8",index=False)
+
+    meta_list = []
+
+    for i in df.columns:
+        if i in  ['From Date','PM2.5 (ug/m3)','PM10 (ug/m3)','NO (ug/m3)','NO2 (ug/m3)','NOx (ppb)','NH3 (ug/m3)','SO2 (ug/m3)','CO (mg/m3)','Ozone (ug/m3)'	,"Benzene (ug/m3)"]:
+            meta_list.append("+1")
+
+    if len(meta_list)==11:
+               
+                df=df[['From Date','PM2.5 (ug/m3)','PM10 (ug/m3)','NO (ug/m3)','NO2 (ug/m3)','NOx (ppb)','NH3 (ug/m3)','SO2 (ug/m3)','CO (mg/m3)','Ozone (ug/m3)'	,"Benzene (ug/m3)"]]
+              
+                df['From Date'] = pd.to_datetime(df['From Date'])
+                df['Month'] = df['From Date'].dt.month
+                df['filename']=BLOBNAME.split(".")[0]
+                df.drop(['From Date'],axis=1,inplace=True)
+                #Keeping the nulls in the dataset , onus on the data science team
+                #df=df.dropna()
+                
+                
+                output = df.to_csv (encoding = "utf-8",index=False)
 
 
-    #Pushing the data back to processed Container
-    blob_service = BlobServiceClient.from_connection_string(
-        f"DefaultEndpointsProtocol=https;AccountName={ACCOUNT_NAME};AccountKey= {ACCOUNT_KEY};EndpointSuffix=core.windows.net"
-    )
+                #Pushing the data back to processed Container
+                blob_service = BlobServiceClient.from_connection_string(
+                    f"DefaultEndpointsProtocol=https;AccountName={ACCOUNT_NAME};AccountKey= {ACCOUNT_KEY};EndpointSuffix=core.windows.net"
+                )
 
-    container_client = blob_service.get_container_client(DEST_CONTAINER)
-    blob_client = blob_service.get_blob_client(container=DEST_CONTAINER, blob="t_"+f"{i}") 
+                container_client = blob_service.get_container_client(DEST_CONTAINER)
+                blob_client = blob_service.get_blob_client(container=DEST_CONTAINER, blob="t_"+f"{j}") 
 
-    blob_client.upload_blob(output,overwrite=True,content_settings=ContentSettings(content_type="text/csv"))
+                blob_client.upload_blob(output,overwrite=True,content_settings=ContentSettings(content_type="text/csv"))
 
