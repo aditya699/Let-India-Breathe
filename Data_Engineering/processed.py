@@ -2,7 +2,7 @@
 Author - Aditya Bhatt 7:00 AM
 Objectives - 
 1.Write code to read all files from raw container and then dump the same to processed container after applying the following transformations-
-1.1 Remove Null's
+1.1 Remove Null's(This item to be handeled by data science team)
 1.2 Extract Month from from_date
 1.3 Drop from_date and to_date
 1.4 Add a column for State (Not Sure will add this is this code to later)
